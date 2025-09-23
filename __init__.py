@@ -12,20 +12,21 @@ class PythonExecNode:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "run"
-    CATEGORY = "Custom"
+    CATEGORY = "Custom/Development"
 
     def run(self, code):
-        # перехватываем stdout
         old_stdout = sys.stdout
         sys.stdout = io.StringIO()
 
+        # ограничим пространство имён
+        safe_globals = {"__builtins__": __builtins__}
         local_vars = {}
         try:
-            exec(code, globals(), local_vars)
+            exec(code, safe_globals, local_vars)
             output = sys.stdout.getvalue()
-            # добавим вывод переменных, если нужно
             if local_vars:
-                output += "\nLocals: " + str(local_vars)
+                vars_repr = ", ".join(f"{k}={v!r}" for k, v in local_vars.items())
+                output += f"\nLocals: {vars_repr}"
         except Exception as e:
             output = f"Error: {e}"
         finally:
